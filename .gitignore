@@ -2,4 +2,6 @@
 
 bin/
 
-
+stderr.txt
+stdin.txt
+stdout.txt
