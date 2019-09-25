@@ -1,4 +1,4 @@
-module github.com/justice-oj/sandbox
+module github.com/ZiheLiu/sandbox
 
 go 1.12
 

@@ -18,7 +18,7 @@ const (
 
 //noinspection GoUnusedExportedFunction
 func InitCGroup(pid, containerID, memory string) error {
-	_, _ = os.Stderr.WriteString(fmt.Sprintf("InitCGroup(%s, %s, %s) starting...\n", pid, containerID, memory))
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: InitCGroup(%s, %s, %s) starting...\n", pid, containerID, memory))
 
 	dirs := []string{
 		filepath.Join(cgCPUPathPrefix, containerID),
@@ -28,27 +28,27 @@ func InitCGroup(pid, containerID, memory string) error {
 
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("os.MkdirAll(%s, os.ModePerm) failed, err: %s\n", dir, err.Error()))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: os.MkdirAll(%s, os.ModePerm) failed, err: %s\n", dir, err.Error()))
 			return err
 		}
 	}
 
 	if err := cpuCGroup(pid, containerID); err != nil {
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("cpuCGroup(%s, %s) failed, err: %s\n", pid, containerID, err.Error()))
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: cpuCGroup(%s, %s) failed, err: %s\n", pid, containerID, err.Error()))
 		return err
 	}
 
 	if err := pidCGroup(pid, containerID); err != nil {
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("pidCGroup(%s, %s) failed, err: %s\n", pid, containerID, err.Error()))
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: pidCGroup(%s, %s) failed, err: %s\n", pid, containerID, err.Error()))
 		return err
 	}
 
 	if err := memoryCGroup(pid, containerID, memory); err != nil {
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("memoryCGroup(%s, %s) failed, err: %s\n", pid, containerID, err.Error()))
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: memoryCGroup(%s, %s) failed, err: %s\n", pid, containerID, err.Error()))
 		return err
 	}
 
-	_, _ = os.Stderr.WriteString(fmt.Sprintf("InitCGroup(%s, %s, %s) done\n", pid, containerID, memory))
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: InitCGroup(%s, %s, %s) done\n", pid, containerID, memory))
 	return nil
 }
 
@@ -63,11 +63,11 @@ func cpuCGroup(pid, containerID string) error {
 	for key, value := range mapping {
 		path := filepath.Join(cgCPUPath, key)
 		if err := ioutil.WriteFile(path, []byte(value), 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing [%s] to file: %s failed\n", value, path))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Writing [%s] to file: %s failed\n", value, path))
 			return err
 		}
 		c, _ := ioutil.ReadFile(path)
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Content of %s is: %s", path, c))
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Content of %s is: %s", path, c))
 	}
 	return nil
 }
@@ -83,11 +83,11 @@ func pidCGroup(pid, containerID string) error {
 	for key, value := range mapping {
 		path := filepath.Join(cgPidPath, key)
 		if err := ioutil.WriteFile(path, []byte(value), 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing [%s] to file: %s failed\n", value, path))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Writing [%s] to file: %s failed\n", value, path))
 			return err
 		}
 		c, _ := ioutil.ReadFile(path)
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Content of %s is: %s", path, c))
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Content of %s is: %s", path, c))
 	}
 	return nil
 }
@@ -104,11 +104,11 @@ func memoryCGroup(pid, containerID, memory string) error {
 	for key, value := range mapping {
 		path := filepath.Join(cgMemoryPath, key)
 		if err := ioutil.WriteFile(path, []byte(value), 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing [%s] to file: %s failed\n", value, path))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Writing [%s] to file: %s failed\n", value, path))
 			return err
 		}
 		c, _ := ioutil.ReadFile(path)
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Content of %s is: %s", path, c))
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Content of %s is: %s", path, c))
 	}
 	return nil
 }

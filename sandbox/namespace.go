@@ -12,7 +12,7 @@ import (
 
 //noinspection GoUnusedExportedFunction
 func InitNamespace(newRoot string) error {
-	_, _ = os.Stderr.WriteString(fmt.Sprintf("InitNamespace(%s) starting...\n", newRoot))
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: InitNamespace(%s) starting...\n", newRoot))
 
 	if err := pivotRoot(newRoot); err != nil {
 		_, _ = os.Stderr.WriteString(fmt.Sprintf("pivotRoot(%s) failed, err: %s\n", newRoot, err.Error()))
@@ -24,7 +24,7 @@ func InitNamespace(newRoot string) error {
 		return err
 	}
 
-	_, _ = os.Stderr.WriteString(fmt.Sprintf("InitNamespace(%s) done\n", newRoot))
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: InitNamespace(%s) done\n", newRoot))
 	return nil
 }
 

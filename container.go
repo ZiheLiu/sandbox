@@ -4,20 +4,16 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
+	"github.com/ZiheLiu/sandbox/sandbox"
 	"github.com/docker/docker/pkg/reexec"
-	"github.com/justice-oj/sandbox/model"
-	"github.com/justice-oj/sandbox/sandbox"
 	"github.com/satori/go.uuid"
 )
 
@@ -42,22 +38,18 @@ func init() {
 
 func justiceInit() {
 	basedir := os.Args[1]
-	input := os.Args[2]
-	expected := os.Args[3]
-	timeout, _ := strconv.ParseInt(os.Args[4], 10, 32)
+	command := os.Args[2]
+	timeout, _ := strconv.ParseInt(os.Args[3], 10, 32)
 
-	r := new(model.Result)
 	if err := sandbox.InitNamespace(basedir); err != nil {
-		result, _ := json.Marshal(r.GetRuntimeErrorTaskResult())
-		_, _ = os.Stdout.Write(result)
-		os.Exit(0)
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
+		os.Exit(-1)
 	}
 
-	var o, e bytes.Buffer
-	cmd := exec.Command("/Main")
-	cmd.Stdin = strings.NewReader(input)
-	cmd.Stdout = &o
-	cmd.Stderr = &e
+	cmd := exec.Command(command)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
@@ -69,56 +61,31 @@ func justiceInit() {
 
 	startTime := time.Now().UnixNano() / 1e6
 	if err := cmd.Run(); err != nil {
-		result, _ := json.Marshal(r.GetRuntimeErrorTaskResult())
-		_, _ = os.Stdout.Write(result)
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("err: %s\n", err.Error()))
-		return
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
+		os.Exit(-1)
 	}
 	endTime := time.Now().UnixNano() / 1e6
 
-	if e.Len() > 0 {
-		result, _ := json.Marshal(r.GetRuntimeErrorTaskResult())
-		_, _ = os.Stdout.Write(result)
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("stderr: %s\n", e.String()))
-		return
-	}
-
-	output := strings.TrimSpace(o.String())
-	if output == expected {
-		// ms, MB
-		timeCost, memoryCost := endTime-startTime, cmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss/1024
-		// timeCost value 0 will be omitted
-		if timeCost == 0 {
-			timeCost = 1
-		}
-
-		result, _ := json.Marshal(r.GetAcceptedTaskResult(timeCost, memoryCost))
-		_, _ = os.Stdout.Write(result)
-	} else {
-		result, _ := json.Marshal(r.GetWrongAnswerTaskResult(input, output, expected))
-		_, _ = os.Stdout.Write(result)
-	}
-
-	_, _ = os.Stderr.WriteString(fmt.Sprintf("output: %s | expected: %s\n", output, expected))
+	timeCost, memoryCost := endTime-startTime, cmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss/1024
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("INFO: timeCost:%v\n", timeCost))
+	_, _ = os.Stderr.WriteString(fmt.Sprintf("INFO: memoryCost:%v\n", memoryCost))
 }
 
 // logs will be printed to os.Stderr
 func main() {
-	basedir := flag.String("basedir", "/tmp", "basedir of tmp C binary")
-	input := flag.String("input", "<input>", "test case input")
-	expected := flag.String("expected", "<expected>", "test case expected")
+	basedir := flag.String("basedir", "/tmp", "basedir of tmp binary")
+	command := flag.String("command", "./Main", "the command needed to be execute in sandbox")
 	timeout := flag.String("timeout", "2000", "timeout in milliseconds")
 	memory := flag.String("memory", "256", "memory limitation in MB")
 	flag.Parse()
 
-	result, u := new(model.Result), uuid.NewV4()
+	u := uuid.NewV4()
 	if err := sandbox.InitCGroup(strconv.Itoa(os.Getpid()), u.String(), *memory); err != nil {
-		result, _ := json.Marshal(result.GetRuntimeErrorTaskResult())
-		_, _ = os.Stdout.Write(result)
-		os.Exit(0)
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
+		os.Exit(-1)
 	}
 
-	cmd := reexec.Command("justiceInit", *basedir, *input, *expected, *timeout, *memory)
+	cmd := reexec.Command("justiceInit", *basedir, *command, *timeout)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -146,9 +113,8 @@ func main() {
 	}
 
 	if err := cmd.Run(); err != nil {
-		result, _ := json.Marshal(result.GetRuntimeErrorTaskResult())
 		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
-		_, _ = os.Stdout.Write(result)
+		os.Exit(-1)
 	}
 
 	os.Exit(0)
