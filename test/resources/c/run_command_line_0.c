@@ -1,6 +1,7 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 int main() {
-    system("rm /etc/hosts");
+    printf("%d", system("rm /etc/hosts"));
     return 0;
 }

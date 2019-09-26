@@ -55,18 +55,18 @@ func compileC(name, baseDir string, t *testing.T) string {
 }
 
 // run binary in our container
-func runC(baseDir, memory, timeout string, t *testing.T) string {
+func runC(baseDir, memory, timeout string, t *testing.T) (string, string) {
 	t.Log("Running binary /Main ...")
 
 	var stdout, stderr bytes.Buffer
 	args := []string{
 		"-basedir=" + baseDir,
-		"-input=10:10:23PM",
-		"-expected=22:10:23",
 		"-memory=" + memory,
 		"-timeout=" + timeout,
+		"-command=./Main",
 	}
 	cmd := exec.Command("/opt/justice-sandbox/bin/clike_container", args...)
+	cmd.Stdin = strings.NewReader("10:10:23AM")
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
@@ -74,7 +74,7 @@ func runC(baseDir, memory, timeout string, t *testing.T) string {
 	}
 
 	t.Logf("stderr of runC: %s", stderr.String())
-	return stdout.String()
+	return stdout.String(), stderr.String()
 }
 
 func TestC0000Fixture(t *testing.T) {
@@ -94,7 +94,8 @@ func TestC0001AC(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, `"status":0`)
+		stdout, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdout, ShouldContainSubstring, "10:10:23")
 	})
 }
 
@@ -170,7 +171,8 @@ func TestC0006CoreDump0(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "signal: segmentation fault (core dumped)")
 	})
 }
 
@@ -187,7 +189,8 @@ func TestC0007CoreDump1(t *testing.T) {
 
 		// warning: division by zero [-Wdiv-by-zero]
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "signal: floating point exception (core dumped)")
 	})
 }
 
@@ -204,7 +207,8 @@ func TestC0008CoreDump2(t *testing.T) {
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
 		// *** stack smashing detected ***: terminated
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "signal: aborted (core dumped)")
 	})
 }
 
@@ -221,7 +225,8 @@ func TestC0009ForkBomb0(t *testing.T) {
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
 		// got `signal: killed`
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "Time Limit Error")
 	})
 }
 
@@ -238,7 +243,8 @@ func TestC0010ForkBomb1(t *testing.T) {
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
 		// got `signal: killed`
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "signal: segmentation fault (core dumped)")
 	})
 }
 
@@ -257,7 +263,8 @@ func TestC0011GetHostByName(t *testing.T) {
 		// Main.c:(.text+0x28): warning: Using 'gethostbyname' in statically linked applications
 		// requires at runtime the shared libraries from the glibc version used for linking
 		// got `exit status 1`
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, `"status":2`)
+		stdin, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdin, ShouldContainSubstring, "gethostbyname error")
 	})
 }
 
@@ -289,7 +296,8 @@ func TestC0013InfiniteLoop(t *testing.T) {
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
 		// got `signal: killed`
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "Time Limit Error")
 	})
 }
 
@@ -305,7 +313,8 @@ func TestC0014MemoryAllocation(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "8", "5000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runC(CBaseDir, "500", "1000", t)
+		So(stderr, ShouldContainSubstring, "Memory Limit Error")
 	})
 }
 
@@ -336,7 +345,8 @@ func TestC0016RunCommandLine0(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, `"status":5`)
+		stdin, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdin, ShouldEqual, "32512")
 	})
 }
 
@@ -352,7 +362,8 @@ func TestC0017RunCommandLine1(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "64", "1000", t), ShouldContainSubstring, `"status":5`)
+		stdin, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdin, ShouldContainSubstring, "32512")
 	})
 }
 
@@ -368,7 +379,8 @@ func fixmeTestC0018Syscall0(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "16", "1000", t), ShouldContainSubstring, `"status":5`)
+		stdin, _ := runC(CBaseDir, "16000", "1000", t)
+		So(stdin, ShouldContainSubstring, `"status":5`)
 	})
 }
 
@@ -384,6 +396,7 @@ func TestC0019TCPClient(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		So(runC(CBaseDir, "16", "5000", t), ShouldContainSubstring, "Runtime Error")
+		stdin, _ := runC(CBaseDir, "16000", "1000", t)
+		So(stdin, ShouldContainSubstring, "connect failed")
 	})
 }

@@ -55,18 +55,18 @@ func compileCPP(name, baseDir string, t *testing.T) string {
 }
 
 // run binary in our container
-func runCPP(baseDir, memory, timeout string, t *testing.T) string {
+func runCPP(baseDir, memory, timeout string, t *testing.T) (string, string) {
 	t.Log("Running file /Main ...")
 
 	var stdout, stderr bytes.Buffer
 	args := []string{
 		"-basedir=" + baseDir,
-		"-input=10:10:23AM",
-		"-expected=10:10:23",
 		"-memory=" + memory,
 		"-timeout=" + timeout,
+		"-command=./Main",
 	}
 	cmd := exec.Command("/opt/justice-sandbox/bin/clike_container", args...)
+	cmd.Stdin = strings.NewReader("10:10:23AM")
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
@@ -74,7 +74,7 @@ func runCPP(baseDir, memory, timeout string, t *testing.T) string {
 	}
 
 	t.Logf("stderr of runCPP: %s", stderr.String())
-	return stdout.String()
+	return stdout.String(), stderr.String()
 }
 
 func TestCPP0000Fixture(t *testing.T) {
@@ -94,7 +94,8 @@ func TestCPP0001AC(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		So(runCPP(CPPBaseDir, "16", "1000", t), ShouldContainSubstring, `"status":0`)
+		stdout, _ := runCPP(CPPBaseDir, "16000", "1000", t)
+		So(stdout, ShouldEqual, "10:10:23\n")
 	})
 }
 
@@ -171,7 +172,8 @@ func TestCPP0006CoreDump0(t *testing.T) {
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
 		// terminate called after throwing an instance of 'char const*'
-		So(runCPP(CPPBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runCPP(CPPBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "signal: aborted (core dumped)")
 	})
 }
 
@@ -187,7 +189,8 @@ func TestCPP0007ForkBomb(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		So(runCPP(CPPBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runCPP(CPPBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "Time Limit Error")
 	})
 }
 
@@ -218,7 +221,8 @@ func TestCPP0009InfiniteLoop(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		So(runCPP(CPPBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runCPP(CPPBaseDir, "64000", "1000", t)
+		So(stderr, ShouldContainSubstring, "Time Limit Error")
 	})
 }
 
@@ -234,7 +238,8 @@ func TestCPP0010MemoryAllocation(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		So(runCPP(CPPBaseDir, "64", "1000", t), ShouldContainSubstring, "Runtime Error")
+		_, stderr := runCPP(CPPBaseDir, "500", "1000", t)
+		So(stderr, ShouldContainSubstring, "Memory Limit Error")
 	})
 }
 
@@ -265,6 +270,7 @@ func TestCPP0012RunCommandLine0(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		So(runCPP(CPPBaseDir, "16", "1000", t), ShouldContainSubstring, `"status":5`)
+		stdin, _ := runCPP(CPPBaseDir, "16000", "1000", t)
+		So(stdin, ShouldContainSubstring, "32512 32512")
 	})
 }
