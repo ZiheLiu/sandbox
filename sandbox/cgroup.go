@@ -63,7 +63,7 @@ func cpuCGroup(pid, containerID string) error {
 	for key, value := range mapping {
 		path := filepath.Join(cgCPUPath, key)
 		if err := ioutil.WriteFile(path, []byte(value), 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Writing [%s] to file: %s failed\n", value, path))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing [%s] to file: %s failed\n", value, path))
 			return err
 		}
 		c, _ := ioutil.ReadFile(path)
@@ -83,7 +83,7 @@ func pidCGroup(pid, containerID string) error {
 	for key, value := range mapping {
 		path := filepath.Join(cgPidPath, key)
 		if err := ioutil.WriteFile(path, []byte(value), 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Writing [%s] to file: %s failed\n", value, path))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing [%s] to file: %s failed\n", value, path))
 			return err
 		}
 		c, _ := ioutil.ReadFile(path)
@@ -98,13 +98,13 @@ func memoryCGroup(pid, containerID, memory string) error {
 	mapping := map[string]string{
 		"memory.kmem.limit_in_bytes": "64m",
 		"tasks":                      pid,
-		"memory.limit_in_bytes":      fmt.Sprintf("%sm", memory),
+		"memory.limit_in_bytes":      fmt.Sprintf("%sK", memory),
 	}
 
 	for key, value := range mapping {
 		path := filepath.Join(cgMemoryPath, key)
 		if err := ioutil.WriteFile(path, []byte(value), 0644); err != nil {
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("DEBUG: Writing [%s] to file: %s failed\n", value, path))
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("Writing [%s] to file: %s failed\n", value, path))
 			return err
 		}
 		c, _ := ioutil.ReadFile(path)
