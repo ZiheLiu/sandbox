@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -54,7 +55,8 @@ func justiceInit() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
+		Setpgid:    true,
+		Credential: &syscall.Credential{Uid: uint32(1), Gid: uint32(1)},
 	}
 	cmd.Env = []string{"PS1=[justice] # "}
 
@@ -102,14 +104,22 @@ func main() {
 	command := flag.String("command", "./Main", "the command needed to be execute in sandbox")
 	timeout := flag.String("timeout", "2000", "timeout in milliseconds")
 	memory := flag.String("memory", "256", "memory limitation in MB")
+	username := flag.String("username", "root", "the user to execute command")
 	flag.Parse()
 
 	containerId := uuid.NewV4().String()
-
 	if err := sandbox.InitCGroup(strconv.Itoa(os.Getpid()), containerId, *memory); err != nil {
 		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(0)
 	}
+
+	u, err := user.Lookup(*username)
+	if err != nil {
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
+		os.Exit(0)
+	}
+	uid, _ := strconv.Atoi(u.Uid)
+	gid, _ := strconv.Atoi(u.Gid)
 
 	cmd := reexec.Command("justiceInit", *basedir, *command, *timeout)
 	cmd.Stdin = os.Stdin
@@ -128,6 +138,11 @@ func main() {
 				HostID:      os.Getuid(),
 				Size:        1,
 			},
+			{
+				ContainerID: 1,
+				HostID:      uid,
+				Size:        1,
+			},
 		},
 		GidMappings: []syscall.SysProcIDMap{
 			{
@@ -135,7 +150,13 @@ func main() {
 				HostID:      os.Getgid(),
 				Size:        1,
 			},
+			{
+				ContainerID: 1,
+				HostID:      gid,
+				Size:        1,
+			},
 		},
+		GidMappingsEnableSetgroups: true,
 	}
 
 	if err := cmd.Run(); err != nil {
