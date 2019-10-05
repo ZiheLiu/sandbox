@@ -103,7 +103,7 @@ func main() {
 	basedir := flag.String("basedir", "/tmp", "basedir of tmp binary")
 	command := flag.String("command", "./Main", "the command needed to be execute in sandbox")
 	timeout := flag.String("timeout", "2000", "timeout in milliseconds")
-	memory := flag.String("memory", "256", "memory limitation in MB")
+	memory := flag.String("memory", "256", "memory limitation in KB")
 	username := flag.String("username", "root", "the user to execute command")
 	flag.Parse()
 
