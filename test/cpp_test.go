@@ -271,8 +271,8 @@ func TestCPP0012RunCommandLine0(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		stdin, _ := runCPP(CPPBaseDir, "16000", "1000", t)
-		So(stdin, ShouldEqual, "32512 32512")
+		stdout, _ := runCPP(CPPBaseDir, "16000", "1000", t)
+		So(stdout, ShouldEqual, "32512 32512")
 	})
 }
 
@@ -288,7 +288,7 @@ func TestCPP0013RunWriteFile(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		stdin, _ := runCPP(CPPBaseDir, "16000", "1000", t)
-		So(stdin, ShouldEqual, "write to file /test.txt failed\n")
+		stdout, _ := runCPP(CPPBaseDir, "16000", "1000", t)
+		So(stdout, ShouldEqual, "write to file /test.txt failed\n")
 	})
 }

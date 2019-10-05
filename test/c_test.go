@@ -264,8 +264,8 @@ func TestC0011GetHostByName(t *testing.T) {
 		// Main.c:(.text+0x28): warning: Using 'gethostbyname' in statically linked applications
 		// requires at runtime the shared libraries from the glibc version used for linking
 		// got `exit status 1`
-		stdin, _ := runC(CBaseDir, "64000", "1000", t)
-		So(stdin, ShouldContainSubstring, "gethostbyname error")
+		stdout, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdout, ShouldContainSubstring, "gethostbyname error")
 	})
 }
 
@@ -346,8 +346,8 @@ func TestC0016RunCommandLine0(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		stdin, _ := runC(CBaseDir, "64000", "1000", t)
-		So(stdin, ShouldEqual, "32512")
+		stdout, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdout, ShouldEqual, "32512")
 	})
 }
 
@@ -363,8 +363,8 @@ func TestC0017RunCommandLine1(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		stdin, _ := runC(CBaseDir, "64000", "1000", t)
-		So(stdin, ShouldContainSubstring, "32512")
+		stdout, _ := runC(CBaseDir, "64000", "1000", t)
+		So(stdout, ShouldContainSubstring, "32512")
 	})
 }
 
@@ -380,8 +380,8 @@ func TestC0018Syscall0(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		stdin, _ := runC(CBaseDir, "16000", "1000", t)
-		So(stdin, ShouldContainSubstring, "-1")
+		stdout, _ := runC(CBaseDir, "16000", "1000", t)
+		So(stdout, ShouldContainSubstring, "-1")
 	})
 }
 
@@ -397,7 +397,7 @@ func TestC0019TCPClient(t *testing.T) {
 		}()
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
-		stdin, _ := runC(CBaseDir, "16000", "1000", t)
-		So(stdin, ShouldContainSubstring, "connect failed")
+		stdout, _ := runC(CBaseDir, "16000", "1000", t)
+		So(stdout, ShouldContainSubstring, "connect failed")
 	})
 }
