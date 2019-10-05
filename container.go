@@ -105,10 +105,11 @@ func main() {
 	timeout := flag.String("timeout", "2000", "timeout in milliseconds")
 	memory := flag.String("memory", "256", "memory limitation in KB")
 	username := flag.String("username", "root", "the user to execute command")
+	cpus := flag.String("cpus", "0", "the user to execute command")
 	flag.Parse()
 
 	containerId := uuid.NewV4().String()
-	if err := sandbox.InitCGroup(strconv.Itoa(os.Getpid()), containerId, *memory); err != nil {
+	if err := sandbox.InitCGroup(strconv.Itoa(os.Getpid()), containerId, *memory, *cpus); err != nil {
 		_, _ = os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(0)
 	}
