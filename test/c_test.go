@@ -64,6 +64,7 @@ func runC(baseDir, memory, timeout string, t *testing.T) (string, string) {
 		"-memory=" + memory,
 		"-timeout=" + timeout,
 		"-command=./Main",
+		"-username=oj-user",
 	}
 	cmd := exec.Command("/opt/justice-sandbox/bin/clike_container", args...)
 	cmd.Stdin = strings.NewReader("10:10:23AM")
@@ -367,7 +368,7 @@ func TestC0017RunCommandLine1(t *testing.T) {
 	})
 }
 
-func fixmeTestC0018Syscall0(t *testing.T) {
+func TestC0018Syscall0(t *testing.T) {
 	name := "syscall_0.c"
 	Convey(fmt.Sprintf("Testing [%s]...", name), t, func() {
 		copyCSourceFile(name, t)
@@ -380,7 +381,7 @@ func fixmeTestC0018Syscall0(t *testing.T) {
 
 		So(compileC(name, CBaseDir, t), ShouldBeEmpty)
 		stdin, _ := runC(CBaseDir, "16000", "1000", t)
-		So(stdin, ShouldContainSubstring, `"status":5`)
+		So(stdin, ShouldContainSubstring, "-1")
 	})
 }
 

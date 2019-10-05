@@ -6,7 +6,7 @@ using namespace std;
 
 void foo(int i) {
 	char* nums = new char[1024 * 1024];
-	if (i < 100) {
+	if (i < 500) {
 		foo(i + 1);
 	}
 }

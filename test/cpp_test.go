@@ -64,6 +64,7 @@ func runCPP(baseDir, memory, timeout string, t *testing.T) (string, string) {
 		"-memory=" + memory,
 		"-timeout=" + timeout,
 		"-command=./Main",
+		"-username=oj-user",
 	}
 	cmd := exec.Command("/opt/justice-sandbox/bin/clike_container", args...)
 	cmd.Stdin = strings.NewReader("10:10:23AM")
@@ -238,7 +239,7 @@ func TestCPP0010MemoryAllocation(t *testing.T) {
 		}()
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
-		_, stderr := runCPP(CPPBaseDir, "500", "1000", t)
+		_, stderr := runCPP(CPPBaseDir, "800", "1000", t)
 		So(stderr, ShouldContainSubstring, "Memory Limit Error")
 	})
 }
@@ -271,6 +272,23 @@ func TestCPP0012RunCommandLine0(t *testing.T) {
 
 		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
 		stdin, _ := runCPP(CPPBaseDir, "16000", "1000", t)
-		So(stdin, ShouldContainSubstring, "32512 32512")
+		So(stdin, ShouldEqual, "32512 32512")
+	})
+}
+
+func TestCPP0013RunWriteFile(t *testing.T) {
+	name := "write_file.cpp"
+	Convey(fmt.Sprintf("Testing [%s]...", name), t, func() {
+		copyCPPSourceFile(name, t)
+		defer func() {
+			if err := os.RemoveAll(CPPBaseDir); err != nil {
+				t.Errorf("Invoke `os.RemoveAll(%s)` err: %v", CPPBaseDir, err)
+				t.FailNow()
+			}
+		}()
+
+		So(compileCPP(name, CPPBaseDir, t), ShouldBeEmpty)
+		stdin, _ := runCPP(CPPBaseDir, "16000", "1000", t)
+		So(stdin, ShouldEqual, "write to file /test.txt failed\n")
 	})
 }
